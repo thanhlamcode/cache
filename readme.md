@@ -67,8 +67,11 @@ R:\ChromeCache\
 
 Run this command (works in PowerShell or CMD):
 
-```cmd
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('$env:USERPROFILE\Desktop\Chrome_RAMDisk.lnk');$s.TargetPath='C:\Program Files\Google\Chrome\Application\chrome.exe';$s.Arguments='--disk-cache-dir=R:\ChromeCache';$s.Save()"
+```$s = (New-Object -COM WScript.Shell).CreateShortcut("C:\Users\dtlam\OneDrive\Desktop\Chrome_RAMDisk.lnk")
+$s.TargetPath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$s.Arguments = "--disk-cache-dir=`"R:\ChromeCache`""
+$s.Save()
+"
 ```
 
 📌 This creates a **Chrome_RAMDisk** shortcut on your Desktop.
