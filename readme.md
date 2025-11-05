@@ -1,103 +1,134 @@
-# 🚀 Speed Up Your System with RAMDisk (Rust Build + Chrome Cache)
+# 🚀 Speed Up Your System with RAMDisk
 
-## 🧩 Goal
+## 🚀 Goal
 
-Use **RAMDisk (drive R:)** to speed up Rust build performance and reduce disk usage while running Chrome.
+Move temporary directories for:
+
+* **Windows / PowerShell Temp**
+* **Chrome Cache**
+* **Tauri build** (Rust target + Vite/Node cache)
+
+→ to drive **R:** (RAMDisk)
 
 ---
 
-## ⚙️ Part 1 — Use RAMDisk for **Rust Build**
+## ⚙️ 1️⃣ Create necessary folders on RAMDisk
 
-### 🔧 Step 1: Install ImDisk Virtual Disk Driver
-
-Download and install **[ImDisk Virtual Disk Driver](https://sourceforge.net/projects/imdisk-toolkit/)**.
-
-After installation, you can create a RAMDisk easily via the ImDisk control panel.
-
-### 🔧 Step 2: Create necessary folders on RAMDisk
-
-#### **Automated Method (Recommended)**
-
-Run this PowerShell script to create all necessary folders if they don't exist:
+Run in **PowerShell (Admin)**:
 
 ```powershell
-$folders = @("R:\Temp", "R:\cargo_target", "R:\ChromeCache")
-
+$folders = @(
+    "R:\Temp",
+    "R:\ChromeCache",
+    "R:\cargo_target",
+    "R:\tauri_cache",
+    "R:\npm_cache"
+)
 foreach ($f in $folders) {
-    if (-not (Test-Path $f)) {
+    if (-not (Test-Path $f)) { 
         New-Item -Path $f -ItemType Directory | Out-Null
-        Write-Host "✅ Created $f"
-    } else {
-        Write-Host "ℹ️ Exists: $f"
+        Write-Host "✅ Created $f" 
+    } else { 
+        Write-Host "ℹ️ Exists: $f" 
     }
 }
 ```
 
-#### **Manual Method**
+---
 
-Alternatively, manually create the folders in your RAMDisk drive `R:`:
+## ⚙️ 2️⃣ Set TEMP and TMP to RAMDisk
 
-```
-R:\cargo_target\
-R:\ChromeCache\
-R:\Temp\  (optional)
-```
-
-### 🔧 Step 3: Configure Cargo to build into RAMDisk
-
-Open PowerShell or CMD and run one of the following commands:
-
-#### **PowerShell**
+Run in **PowerShell (Admin)**:
 
 ```powershell
-New-Item -Path "$env:USERPROFILE\.cargo\config.toml" -ItemType File -Force; Add-Content -Path "$env:USERPROFILE\.cargo\config.toml" -Value "[build]`ntarget-dir = 'R:\\cargo_target'"
+setx TEMP "R:\Temp" /M
+setx TMP "R:\Temp" /M
 ```
-
-#### **CMD**
-
-```cmd
-echo [build]> "%USERPROFILE%\.cargo\config.toml" && echo target-dir = "R:\\cargo_target">> "%USERPROFILE%\.cargo\config.toml"
-```
-
-📁 The configuration file will be created at:
-
-```
-C:\Users\<username>\.cargo\config.toml
-```
-
-### ✅ Result
-
-* All Rust projects (`cargo build`, `cargo test`, …) will build into `R:\cargo_target`.
-* Faster build times and reduced SSD/HDD writes.
 
 ---
 
-## 🌐 Part 2 — Use RAMDisk for **Chrome Cache**
+## 🔁 3️⃣ Restart your computer
 
-### 🧱 Preparation
+**Restart your computer** so Windows & PowerShell recognize the new paths.
 
-The `R:\ChromeCache\` folder should already be created in **Step 2** of Part 1. If you skipped that step, create it manually or run the automated script from Part 1.
+> ⚠️ **Note**: After restarting, the environment variables `TEMP` and `TMP` will point to `R:\Temp`.
 
 ---
 
-### ⚙️ Option 1 — Create a dedicated Chrome Shortcut
+## ⚙️ 4️⃣ Configure Tauri + Rust build cache to RAMDisk
 
-Run this command (works in PowerShell or CMD):
+Tauri relies on Cargo and Node/Vite, so we need to configure:
 
-```$s = (New-Object -COM WScript.Shell).CreateShortcut("C:\Users\dtlam\OneDrive\Desktop\Chrome_RAMDisk.lnk")
+* **Cargo build output**
+* **npm/yarn/pnpm cache**
+* **Vite/Tauri cache**
+
+### 🔧 4.1 Cargo target dir
+
+Run in PowerShell:
+
+```powershell
+$cargoConfig = "$env:USERPROFILE\.cargo\config.toml"
+New-Item -Path $cargoConfig -ItemType File -Force | Out-Null
+Add-Content -Path $cargoConfig -Value "[build]`ntarget-dir = 'R:\\cargo_target'"
+Write-Host "✅ Cargo target directory set to R:\cargo_target"
+```
+
+### 🔧 4.2 npm/yarn/pnpm cache
+
+#### **npm cache**
+
+```powershell
+npm config set cache "R:\npm_cache"
+```
+
+#### **yarn cache**
+
+```powershell
+yarn config set cacheFolder "R:\npm_cache\yarn"
+```
+
+#### **pnpm cache**
+
+```powershell
+pnpm config set store-dir "R:\npm_cache\pnpm"
+```
+
+### 🔧 4.3 Vite cache (Tauri)
+
+Create a `.env` file in your Tauri project:
+
+```env
+VITE_CACHE_DIR=R:\tauri_cache
+```
+
+Or set a system-wide environment variable:
+
+```powershell
+setx VITE_CACHE_DIR "R:\tauri_cache" /M
+```
+
+---
+
+## 🌐 5️⃣ Configure Chrome Cache to RAMDisk
+
+### ⚙️ Option 1 — Create Chrome Shortcut with RAMDisk
+
+Run in PowerShell:
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:USERPROFILE\OneDrive\Desktop\Chrome_RAMDisk.lnk")
 $s.TargetPath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $s.Arguments = "--disk-cache-dir=`"R:\ChromeCache`""
 $s.Save()
+Write-Host "✅ Chrome shortcut created on OneDrive Desktop (Chrome_RAMDisk)"
 ```
 
-📌 This creates a **Chrome_RAMDisk** shortcut on your Desktop.
-When launched, Chrome stores its cache in the RAMDisk — faster page loading and lower Disk usage.
+📌 Use the **Chrome_RAMDisk** shortcut to launch Chrome with cache on RAMDisk.
 
----
+### ⚙️ Option 2 — Symbolic Link (mklink) — Permanent setup
 
-### ⚙️ Option 2 — Use **Symbolic Link (mklink)** for a permanent setup
-
-> ⚠️ Run these commands in **Command Prompt (Run as Administrator)** — not PowerShell.
+> ⚠️ Run in **Command Prompt (Run as Administrator)** — not PowerShell.
 
 ```cmd
 rmdir "%LocalAppData%\Google\Chrome\User Data\Default\Cache" /s /q
@@ -110,30 +141,42 @@ mklink /D "%LocalAppData%\Google\Chrome\User Data\Default\Cache" "R:\ChromeCache
 symbolic link created for ... <<===>> R:\ChromeCache
 ```
 
-→ the setup succeeded.
+→ setup succeeded.
 
 ---
 
 ## 🧠 Summary Table
 
-| Component       | Path on RAMDisk   | Notes                              |
-| --------------- | ----------------- | ---------------------------------- |
-| Rust build      | `R:\cargo_target` | 3–5x faster build speed            |
-| Chrome cache    | `R:\ChromeCache`  | Lower Disk usage, faster page load |
-| (Optional) TEMP | `R:\Temp`         | Reduce temporary writes on drive C |
+| Component           | Path on RAMDisk      | Benefits                                    |
+| ------------------- | -------------------- | ------------------------------------------- |
+| Windows Temp        | `R:\Temp`            | Reduced disk writes, faster temp processing |
+| Chrome cache        | `R:\ChromeCache`     | Faster page loading, lower disk usage       |
+| Rust build          | `R:\cargo_target`    | 3–5x faster build speed                     |
+| npm/yarn/pnpm cache | `R:\npm_cache`       | Faster package installation                 |
+| Vite/Tauri cache    | `R:\tauri_cache`     | Faster Tauri builds                         |
 
 ---
 
 ## 🔁 Optional: Auto-mount RAMDisk on Startup
 
 In **ImDisk**, go to:
+
 **File → Save Image File and Mount Settings → Mount at Windows startup**
-→ Windows will recreate drive `R:` automatically every time it starts.
+
+→ Windows will automatically recreate drive `R:` every time it starts.
 
 ---
 
 ## ✅ Final Notes
 
-* Create an 8 GB RAMDisk using ImDisk.
-* Configure Cargo and Chrome to use the RAMDisk for builds and cache.
-* Enjoy noticeably faster Rust builds, smoother Chrome browsing, and stable
+* Create an 8–16 GB RAMDisk using ImDisk (depending on RAM and needs).
+* Configure all temporary directories and cache to RAMDisk.
+* Enjoy faster Rust/Tauri builds, smoother Chrome browsing, and reduced SSD/HDD writes.
+
+---
+
+## 📚 References
+
+* [ImDisk Virtual Disk Driver](https://sourceforge.net/projects/imdisk-toolkit/)
+* [Cargo Configuration](https://doc.rust-lang.org/cargo/reference/config.html)
+* [Tauri Documentation](https://tauri.app/)
