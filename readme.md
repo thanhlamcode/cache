@@ -14,12 +14,33 @@ Download and install **[ImDisk Virtual Disk Driver](https://sourceforge.net/proj
 
 After installation, you can create a RAMDisk easily via the ImDisk control panel.
 
-### 🔧 Step 2: Create a build folder on RAMDisk
+### 🔧 Step 2: Create necessary folders on RAMDisk
 
-In your RAMDisk drive `R:`, create the folder:
+#### **Automated Method (Recommended)**
+
+Run this PowerShell script to create all necessary folders if they don't exist:
+
+```powershell
+$folders = @("R:\Temp", "R:\cargo_target", "R:\ChromeCache")
+
+foreach ($f in $folders) {
+    if (-not (Test-Path $f)) {
+        New-Item -Path $f -ItemType Directory | Out-Null
+        Write-Host "✅ Created $f"
+    } else {
+        Write-Host "ℹ️ Exists: $f"
+    }
+}
+```
+
+#### **Manual Method**
+
+Alternatively, manually create the folders in your RAMDisk drive `R:`:
 
 ```
 R:\cargo_target\
+R:\ChromeCache\
+R:\Temp\  (optional)
 ```
 
 ### 🔧 Step 3: Configure Cargo to build into RAMDisk
@@ -55,11 +76,7 @@ C:\Users\<username>\.cargo\config.toml
 
 ### 🧱 Preparation
 
-Create the cache folder inside your RAMDisk:
-
-```
-R:\ChromeCache\
-```
+The `R:\ChromeCache\` folder should already be created in **Step 2** of Part 1. If you skipped that step, create it manually or run the automated script from Part 1.
 
 ---
 
