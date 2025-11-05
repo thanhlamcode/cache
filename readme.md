@@ -71,7 +71,6 @@ Run this command (works in PowerShell or CMD):
 $s.TargetPath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $s.Arguments = "--disk-cache-dir=`"R:\ChromeCache`""
 $s.Save()
-"
 ```
 
 📌 This creates a **Chrome_RAMDisk** shortcut on your Desktop.
